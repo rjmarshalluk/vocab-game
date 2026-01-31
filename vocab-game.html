@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>11+ Vocabulary Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f9ff;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+.screen {
+    display: none;
+    padding: 30px;
+}
+
+.active {
+    display: block;
+}
+
+button {
+    font-size: 18px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+#top-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+#word {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+#definitions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.definition {
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    cursor: pointer;
+}
+
+.definition:hover {
+    background: #ecf6ff;
+}
+
+.correct {
+    background: #c8f7c5 !important;
+    border-color: #27ae60;
+}
+
+.wrong {
+    background: #f7c5c5 !important;
+    border-color: #c0392b;
+}
+
+#wrong-list {
+    text-align: left;
+    max-width: 750px;
+    margin: auto;
+}
+</style>
+</head>
+
+<body>
+
+<!-- START SCREEN -->
+<div id="start-screen" class="screen active">
+    <h1>11+ Vocabulary Challenge</h1>
+    <p>Answer as many words as you can in 60 seconds.</p>
+    <button onclick="startGame()">Start Game</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen">
+    <div id="top-bar">
+        <div>⏱ <span id="time">60</span>s</div>
+        <div>⭐ <span id="score">0</span></div>
+        <div>🏆 <span id="highScore">0</span></div>
+    </div>
+
+    <div id="word"></div>
+    <div id="definitions"></div>
+</div>
+
+<!-- END SCREEN -->
+<div id="end-screen" class="screen">
+    <h1>Time’s Up!</h1>
+    <p>Your score: <strong><span id="finalScore"></span></strong></p>
+    <h2>Words to Review</h2>
+    <div id="wrong-list"></div>
+    <button onclick="startGame()">Play Again</button>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const TIME_LIMIT = 60;
+
+/* ================= FULL VOCAB LIST ================= */
+const vocabWords = [
+"abandon","abode","absence","absurd","abundance","abundant","accuse","accustom",
+"acquainted","acquire","across","address","adhere","admission","adopt","advance",
+"affable","affectionate","aid","alert","ally","altitude","ambition","amount","ample",
+"antiquity","anxious","appeal","appearance","apprehensive","approve","arduous",
+"argument","arouse","artful","article","assemble","assiduous","assistance","asunder",
+"attached","attempt","available","average","avoid","avowed","awkward","banish",
+"bargain","barren","beautiful","because","beck","believe","belligerent","bemused",
+"benefit","besieged","betray","bewildered","bicycle","brief","broad","bruise",
+"brusque","burden","business","calamity","candidate","careering","category",
+"caulking","caution","cease","cemetery","chaos","charred","choreographer",
+"clemency","coarse","coax","college","combination","commence","commit","committee",
+"communicate","community","companion","company","compel","competition","completely",
+"complex","composition","comprehend","comrade","conceal","conceited","concentrated",
+"conclude","conclusion","condemn","conferred","confine","conscience","conscious",
+"consent","conserve","consideration","consist","conspire","constant","consume",
+"contemporary","contempt","content","contest","contract","contrast","contribute",
+"conventional","convert","convey","convict","convince","covert","covet","coy","credit",
+"cultivate","cunning","curb","curious","curt","custom","debate","debrief","deceit",
+"decline","definite","deliberate","demolish","deny","deposit","depot","derelict",
+"description","despair","desperately","despise","destitute","determine","develop",
+"device","devote","dictionary","digest","dilapidated","diluted","disarray",
+"disastrous","disclose","discontent","dishevelled","dismal","disperse","dispute",
+"distasteful","distinct","distinguished","distress","divine","divinity","domestic",
+"dose","drought","dumb","dwelling","earnest","economical","elect","elude","embarrass",
+"embrace","emerge","empire","employ","endeavour","endure","enterprise","entire",
+"environment","equip","erect","errand","especially","estimate","evaluation","evident",
+"exaggerate","exclaim","existence","expel","expense","explanation","exterior",
+"extinction","extract","extremely","famine","fatal","fatigue","feeble","feign",
+"fertile","flamboyant","flawless","fleet","flora","flourish","foe","forbid",
+"foundation","fragment","fragrant","frequent","frivolous","fund","garment",
+"government","grate","gratitude","grave","gregarious","grieve","grotesque","guarantee",
+"habitable","habitat","halt","helix","heroic","hoax","hollow","humble","hygienic",
+"idiosyncrasy","idle","idol","ignorant","imitate","immediate","immerse","impudent",
+"inaudible","inaugural","inaugurate","incision","inconspicuous","individual",
+"inedible","inferior","influence","inhabitant","innocuous","insane","insert",
+"insolent","inspire","intangible","intense","intention","interfere","interior",
+"interpret","interrogate","interrupt","invalid","isolation","justice","labour",
+"lament","latter","lavish","leisure","lenient","liable","liberal","liberty","limb",
+"linger","lodge","lofty","loyal","majestic","malady","margin","mariner","matte",
+"maximum","meagre","merchant","mercy","mere","meticulous","minimum","moderate",
+"modest","moral","mortal","mysterious","nauseous","nimble","nuisance","oath",
+"object (noun)","object (verb)","oblige","obscure","obstinate","occupy","odour",
+"offend","omen","opportunity","oppose","oppress","option","ordeal","origin",
+"ostentatious","painstaking","palaeontologist","parallel","passive","pasture","peak",
+"peculiar","perceive","perilous","perish","permit (noun)","permit (verb)",
+"perplexed","persuade","physical","physiotherapy","pigment","pioneer","placid",
+"pledge","plume","plunder","plunge","polarity","pompous","poultry","precarious",
+"prejudice","privilege","proclaim","procure","profession","profit","prohibit",
+"prominent","promote","prompt","pronunciation","proportion","prosperous","provoke",
+"public","punctual","puncture","purpose","quaint","quell","quench","queue","quiver",
+"raiment","ramble","rank","recite","refuse (noun)","refuse (verb)","release","repent",
+"reprimand","reserve","residence","resign","resolve","resort","restore","restrain",
+"retain","retreat","reveal","revive","rhyme","ridiculous","rigid","roam","robust",
+"rogue","rowdy","rural","sacred","sacrifice","sanitary","satin","scanty","score",
+"scripture","secure","seize","seldom","separate","sermon","shoulder","shrine",
+"shrink","signature","sincere","sleek","sly","sober","soldier","sow","special",
+"stern","stomach","stoop","stout","stress","stubborn","sturdy","subdued",
+"submissive","submit","subterfuge","subterranean","successful","succumb",
+"sufficient","suggest","summit","superfluous","superior","suspect","suspend",
+"symbol","system","temperate","tempestuous","temptation","thrust","torment",
+"traitor","tranquil","trifle","trivial","tyrant","unfathomable","uniform","union",
+"unite","unnecessary","unorthodox","unsurpassed","vacant","vanish","vapour","vast",
+"vehicle","veil","venerable","ventilation","vessel","vicarious","virtuous",
+"volatile","wasteful","weary","wholesome","wither","wholly","worthy","yield"
+];
+
+/* ================= DEFINITIONS ================= */
+/* (All definitions are real, age-appropriate, UK English) */
+const definitions = {
+"abandon": "To leave something behind or give it up completely.",
+  "abode": "A place where someone lives.",
+  "absence": "The state of not being present.",
+  "absurd": "So silly it makes no sense.",
+  "abundance": "A very large amount.",
+  "abundant": "More than enough.",
+  "accuse": "To say someone has done something wrong.",
+  "accustom": "To make someone used to something.",
+  "acquainted": "Having some knowledge of someone.",
+  "acquire": "To get or gain something.",
+  "across": "From one side to the other.",
+  "address": "To speak or write to someone.",
+  "adhere": "To stick firmly to something.",
+  "admission": "Permission to enter a place.",
+  "adopt": "To take on as one’s own.",
+  "advance": "To move forward.",
+  "affable": "Friendly and easy to talk to.",
+  "affectionate": "Showing love and care.",
+  "aid": "Help given to someone.",
+  "alert": "Quick to notice danger.",
+  "ally": "A helper or supporter.",
+  "altitude": "Height above sea level.",
+  "ambition": "A strong wish to succeed.",
+  "amount": "How much there is.",
+  "ample": "More than enough.",
+  "antiquity": "Great age from long ago.",
+  "anxious": "Worried or uneasy.",
+  "appeal": "To make a serious request.",
+  "appearance": "The way something looks.",
+  "apprehensive": "Feeling nervous about something.",
+  "approve": "To agree that something is good.",
+  "arduous": "Very difficult and tiring.",
+  "argument": "A disagreement with reasons.",
+  "arouse": "To wake interest or feeling.",
+  "artful": "Clever in a tricky way.",
+  "article": "A piece of writing.",
+  "assemble": "To gather together.",
+  "assiduous": "Working very hard and carefully.",
+  "assistance": "Help given to someone.",
+  "asunder": "Pulled or broken apart.",
+  "attached": "Joined or connected.",
+  "attempt": "To try to do something.",
+  "available": "Able to be used or chosen.",
+  "average": "The usual or middle amount.",
+  "avoid": "To keep away from something.",
+  "avowed": "Openly stated.",
+  "awkward": "Clumsy or uncomfortable.",
+  "banish": "To send someone away.",
+  "bargain": "Something bought for a low price.",
+  "barren": "Unable to grow plants.",
+  "beautiful": "Very pleasing to look at.",
+  "because": "For the reason that.",
+  "beck": "To signal someone to come.",
+  "believe": "To think something is true.",
+  "belligerent": "Ready to fight or argue.",
+  "bemused": "Confused and puzzled.",
+  "benefit": "Something that helps.",
+  "besieged": "Surrounded and attacked.",
+  "betray": "To be unfaithful to trust.",
+  "bewildered": "Very confused.",
+  "bicycle": "A vehicle with two wheels powered by pedalling.",
+  "brief": "Short in time or length.",
+  "broad": "Wide across.",
+  "bruise": "A dark mark from an injury.",
+  "brusque": "Rudely short in manner.",
+  "burden": "A heavy load or worry.",
+  "business": "Work done to earn money.",
+  "calamity": "A terrible disaster.",
+  "candidate": "A person chosen for a role or position.",
+  "careering": "Moving wildly and out of control.",
+  "category": "A group of similar things.",
+  "caulking": "Material used to seal gaps.",
+  "caution": "Care taken to avoid danger.",
+  "cease": "To stop.",
+  "cemetery": "A place where people are buried.",
+  "chaos": "Complete disorder.",
+  "charred": "Burnt and blackened.",
+  "choreographer": "A person who plans dances.",
+  "clemency": "Kindness in punishment.",
+  "coarse": "Rough or not smooth.",
+  "coax": "To gently persuade.",
+  "college": "A place of further learning.",
+  "combination": "Things joined together.",
+  "commence": "To begin.",
+  "commit": "To carry out an action.",
+  "committee": "A group chosen to make decisions.",
+  "communicate": "To share information.",
+  "community": "People living in the same area.",
+  "companion": "A friend who spends time with you.",
+  "company": "A group of people or a business.",
+  "compel": "To force someone to act.",
+  "competition": "An event where people try to win.",
+  "completely": "Fully and totally.",
+  "complex": "Made of many parts.",
+  "composition": "The way parts are put together.",
+  "comprehend": "To understand.",
+  "comrade": "A close friend or partner.",
+  "conceal": "To hide something.",
+  "conceited": "Thinking too highly of oneself.",
+  "concentrated": "Focused closely.",
+  "conclude": "To finish or decide.",
+  "conclusion": "The final decision or ending.",
+  "condemn": "To say something is wrong.",
+  "conferred": "Gave or granted something.",
+  "confine": "To keep within limits.",
+  "conscience": "Inner sense of right and wrong.",
+  "conscious": "Awake and aware.",
+  "consent": "Permission given.",
+  "conserve": "To save and protect.",
+  "consideration": "Careful thought.",
+  "consist": "To be made of.",
+  "conspire": "To plan secretly.",
+  "constant": "Happening all the time.",
+  "consume": "To use up.",
+  "contemporary": "Belonging to the present time.",
+  "contempt": "Strong dislike or disrespect.",
+  "content": "Feeling satisfied and happy.",
+  "contest": "A competition.",
+  "contract": "A legal agreement.",
+  "contrast": "A clear difference.",
+  "contribute": "To give or add something.",
+  "conventional": "Following usual ways.",
+  "convert": "To change into another form.",
+  "convey": "To carry or make known.",
+  "convict": "To prove someone guilty.",
+  "convince": "To make someone believe.",
+  "covert": "Hidden or secret.",
+  "covet": "To strongly want something owned by another.",
+  "coy": "Shy in a playful way.",
+  "credit": "Praise or trust given.",
+  "cultivate": "To grow or develop carefully.",
+  "cunning": "Clever in a sneaky way.",
+  "curb": "To control or limit.",
+  "curious": "Eager to learn or know.",
+  "curt": "Rudely brief.",
+  "custom": "A usual way of doing things.",
+  "debate": "A formal discussion of ideas.",
+  "debrief": "To discuss after an event.",
+  "deceit": "Dishonesty or trickery.",
+  "decline": "To refuse or decrease.",
+  "definite": "Clear and certain.",
+  "deliberate": "Done on purpose.",
+  "demolish": "To knock down completely.",
+  "deny": "To say something is not true.",
+  "deposit": "To place something for safekeeping.",
+  "depot": "A place for storage.",
+  "derelict": "Abandoned and in poor condition.",
+  "description": "Details that explain how something is.",
+  "despair": "A feeling of no hope.",
+  "desperately": "In a very worried or urgent way.",
+  "despise": "To strongly dislike.",
+  "destitute": "Very poor and lacking basics.",
+  "determine": "To decide firmly.",
+  "develop": "To grow or improve.",
+  "device": "A tool or piece of equipment.",
+  "devote": "To give time and care to something.",
+  "dictionary": "A book of word meanings.",
+  "digest": "To break down food in the body.",
+  "dilapidated": "In very bad condition.",
+  "diluted": "Made weaker by adding liquid.",
+  "disarray": "A state of mess.",
+  "disastrous": "Causing great damage.",
+  "disclose": "To reveal something.",
+  "discontent": "Unhappiness or dissatisfaction.",
+  "dishevelled": "Untidy in appearance.",
+  "dismal": "Very gloomy or sad.",
+  "disperse": "To scatter in different directions.",
+  "dispute": "A disagreement.",
+  "distasteful": "Unpleasant or offensive.",
+  "distinct": "Clearly different.",
+  "distinguished": "Respected and admired.",
+  "distress": "Great worry or pain.",
+  "divine": "Related to a god or gods.",
+  "divinity": "A god or holy power.",
+  "domestic": "Related to the home.",
+  "dose": "A measured amount of medicine.",
+  "drought": "A long time without rain.",
+  "dumb": "Unable to speak.",
+  "dwelling": "A place where someone lives.",
+  "earnest": "Serious and sincere.",
+  "economical": "Using money or resources carefully.",
+  "elect": "To choose by voting.",
+  "elude": "To escape from.",
+  "embarrass": "To make someone feel awkward.",
+  "embrace": "To hold someone closely.",
+  "emerge": "To come out into view.",
+  "empire": "Many lands ruled by one leader.",
+  "employ": "To give someone a job.",
+  "endeavour": "A serious effort.",
+  "endure": "To continue through difficulty.",
+  "enterprise": "A bold or challenging project.",
+  "entire": "Whole and complete.",
+  "environment": "The natural world around us.",
+  "equip": "To provide what is needed.",
+  "erect": "To build upright.",
+  "errand": "A short trip to do a task.",
+  "especially": "More than usual.",
+  "estimate": "A rough guess.",
+  "evaluation": "Careful judging.",
+  "evident": "Easy to see or understand.",
+  "exaggerate": "To make something seem bigger than it is.",
+  "exclaim": "To cry out suddenly.",
+  "existence": "Being alive or real.",
+  "expel": "To force out.",
+  "expense": "Money spent.",
+  "explanation": "A clear reason given.",
+  "exterior": "The outside part.",
+  "extinction": "The complete dying out of a group.",
+  "extract": "To take out.",
+  "extremely": "To a very great degree.",
+  "famine": "A time of extreme food shortage.",
+  "fatal": "Causing death.",
+  "fatigue": "Extreme tiredness.",
+  "feeble": "Very weak.",
+  "feign": "To pretend.",
+  "fertile": "Able to grow plants well.",
+  "flamboyant": "Very bright and showy.",
+  "flawless": "Without any mistakes.",
+  "fleet": "Very fast-moving.",
+  "flora": "Plant life.",
+  "flourish": "To grow well or succeed.",
+  "foe": "An enemy.",
+  "forbid": "To not allow.",
+  "foundation": "A strong base or beginning.",
+  "fragment": "A small broken piece.",
+  "fragrant": "Having a pleasant smell.",
+  "frequent": "Happening often.",
+  "frivolous": "Not serious or sensible.",
+  "fund": "Money saved for a purpose.",
+  "garment": "An item of clothing.",
+  "government": "People who run a country.",
+  "grate": "To annoy or irritate.",
+  "gratitude": "Thankfulness.",
+  "grave": "Serious or very important.",
+  "gregarious": "Enjoying being with others.",
+  "grieve": "To feel deep sadness.",
+  "grotesque": "Strangely ugly or shocking.",
+  "guarantee": "A promise that something will happen.",
+  "habitable": "Suitable for living in.",
+  "habitat": "The natural home of a plant or animal.",
+  "halt": "To stop.",
+  "helix": "A spiral shape.",
+  "heroic": "Very brave.",
+  "hoax": "A trick meant to fool people.",
+  "hollow": "Empty inside.",
+  "humble": "Not thinking too highly of oneself.",
+  "hygienic": "Clean and healthy.",
+  "idiosyncrasy": "A strange personal habit.",
+  "idle": "Not doing anything.",
+  "idol": "Someone greatly admired.",
+  "ignorant": "Lacking knowledge.",
+  "imitate": "To copy someone or something.",
+  "immediate": "Happening right away.",
+  "immerse": "To cover completely in liquid.",
+  "impudent": "Rude and disrespectful.",
+  "inaudible": "Too quiet to hear.",
+  "inaugural": "Marking a beginning.",
+  "inaugurate": "To formally begin.",
+  "incision": "A careful cut.",
+  "inconspicuous": "Not easily noticed.",
+  "individual": "A single person.",
+  "inedible": "Not safe to eat.",
+  "inferior": "Lower in quality.",
+  "influence": "The power to affect others.",
+  "inhabitant": "A person who lives in a place.",
+  "innocuous": "Harmless.",
+  "insane": "Seriously mentally ill.",
+  "insert": "To put something in.",
+  "insolent": "Rude and disrespectful.",
+  "inspire": "To fill with ideas or excitement.",
+  "intangible": "Unable to be touched.",
+  "intense": "Very strong.",
+  "intention": "A plan or aim.",
+  "interfere": "To get in the way.",
+  "interior": "The inside part.",
+  "interpret": "To explain meaning.",
+  "interrogate": "To question closely.",
+  "interrupt": "To stop something briefly.",
+  "invalid": "Not acceptable or correct.",
+  "isolation": "Being separated from others.",
+  "justice": "Fair treatment.",
+  "labour": "Hard physical work.",
+  "lament": "To express sadness.",
+  "latter": "The second of two.",
+  "lavish": "Very generous.",
+  "leisure": "Free time.",
+  "lenient": "Not strict.",
+  "liable": "Legally responsible.",
+  "liberal": "Open to new ideas.",
+  "liberty": "Freedom.",
+  "limb": "An arm or leg.",
+  "linger": "To stay longer than needed.",
+  "lodge": "A place to stay.",
+  "lofty": "Very tall or high.",
+  "loyal": "Faithful and true.",
+  "majestic": "Grand and impressive.",
+  "malady": "An illness.",
+  "margin": "The edge of something.",
+  "mariner": "A sailor.",
+  "matte": "Not shiny.",
+  "maximum": "The greatest amount.",
+  "meagre": "Very small in amount.",
+  "merchant": "A person who sells goods.",
+  "mercy": "Kindness instead of punishment.",
+  "mere": "Only and nothing more.",
+  "meticulous": "Very careful with details.",
+  "minimum": "The smallest amount.",
+  "moderate": "Not too much or too little.",
+  "modest": "Not showing off.",
+  "moral": "About right and wrong.",
+  "mortal": "Able to die.",
+  "mysterious": "Hard to understand.",
+  "nauseous": "Feeling like being sick.",
+  "nimble": "Quick and light in movement.",
+  "nuisance": "Something annoying.",
+  "oath": "A serious promise.",
+  "object (noun)": "A thing that can be seen or touched.",
+  "object (verb)": "To express disagreement.",
+  "oblige": "To do a favour or duty.",
+  "obscure": "Hard to see or understand.",
+  "obstinate": "Refusing to change one’s mind.",
+  "occupy": "To take up space or time.",
+  "odour": "A smell.",
+  "offend": "To upset or hurt feelings.",
+  "omen": "A sign of what may happen.",
+  "opportunity": "A good chance.",
+  "oppose": "To be against.",
+  "oppress": "To treat unfairly with power.",
+  "option": "A choice.",
+  "ordeal": "A very difficult experience.",
+  "origin": "The beginning.",
+  "ostentatious": "Showing off.",
+  "painstaking": "Done with great care.",
+  "palaeontologist": "A scientist who studies fossils.",
+  "parallel": "Side by side and equal.",
+  "passive": "Not active.",
+  "pasture": "Land where animals feed.",
+  "peak": "The highest point.",
+  "peculiar": "Strange or unusual.",
+  "perceive": "To notice or understand.",
+  "perilous": "Very dangerous.",
+  "perish": "To die.",
+  "permit (noun)": "An official written permission.",
+  "permit (verb)": "To allow something.",
+  "perplexed": "Very confused.",
+  "persuade": "To convince someone.",
+  "physical": "Related to the body.",
+  "physiotherapy": "Treatment using movement exercises.",
+  "pigment": "A substance that gives colour.",
+  "pioneer": "A person who is first to explore.",
+  "placid": "Calm and peaceful.",
+  "pledge": "A serious promise.",
+  "plume": "A feather or cloud of smoke.",
+  "plunder": "To steal goods by force.",
+  "plunge": "To fall suddenly.",
+  "polarity": "Opposite forces or directions.",
+  "pompous": "Too proud and self-important.",
+  "poultry": "Birds kept for eggs or meat.",
+  "precarious": "Unsafe or unstable.",
+  "prejudice": "Unfair judgement.",
+  "privilege": "A special right.",
+  "proclaim": "To announce publicly.",
+  "procure": "To obtain with effort.",
+  "profession": "A job needing training.",
+  "profit": "Money gained.",
+  "prohibit": "To forbid.",
+  "prominent": "Easy to notice.",
+  "promote": "To support or raise.",
+  "prompt": "Quick to act.",
+  "pronunciation": "The way a word is spoken.",
+  "proportion": "A part compared to the whole.",
+  "prosperous": "Doing very well.",
+  "provoke": "To cause a reaction.",
+  "public": "For everyone.",
+  "punctual": "On time.",
+  "puncture": "A small hole made by something sharp.",
+  "purpose": "A reason for doing something.",
+  "quaint": "Attractively old-fashioned.",
+  "quell": "To stop something.",
+  "quench": "To satisfy thirst or put out fire.",
+  "queue": "A line of people waiting.",
+  "quiver": "To shake slightly.",
+  "raiment": "Clothing.",
+  "ramble": "To walk without direction.",
+  "rank": "Position or level.",
+  "recite": "To say aloud from memory.",
+  "refuse (noun)": "Waste or rubbish.",
+  "refuse (verb)": "To say no.",
+  "release": "To let go.",
+  "repent": "To feel sorry for wrongdoing.",
+  "reprimand": "A formal telling off.",
+  "reserve": "Something kept back.",
+  "residence": "A place where someone lives.",
+  "resign": "To give up a job.",
+  "resolve": "To decide firmly.",
+  "resort": "A holiday place.",
+  "restore": "To bring back to good condition.",
+  "restrain": "To hold back.",
+  "retain": "To keep.",
+  "retreat": "To move back.",
+  "reveal": "To show something hidden.",
+  "revive": "To bring back to life.",
+  "rhyme": "Words that sound alike at the end.",
+  "ridiculous": "Very silly.",
+  "rigid": "Stiff and not flexible.",
+  "roam": "To wander around.",
+  "robust": "Strong and healthy.",
+  "rogue": "A dishonest person.",
+  "rowdy": "Noisy and rough.",
+  "rural": "Related to the countryside.",
+  "sacred": "Very holy.",
+  "sacrifice": "To give up something valuable.",
+  "sanitary": "Clean and healthy.",
+  "satin": "Smooth shiny fabric.",
+  "scanty": "Very small in amount.",
+  "score": "Twenty or a mark gained.",
+  "scripture": "Holy writings.",
+  "secure": "Safe and protected.",
+  "seize": "To take suddenly.",
+  "seldom": "Not often.",
+  "separate": "To keep apart.",
+  "sermon": "A religious speech.",
+  "shoulder": "The part joining arm and body.",
+  "shrine": "A holy place.",
+  "shrink": "To become smaller.",
+  "signature": "A person’s written name.",
+  "sincere": "Truly meant.",
+  "sleek": "Smooth and shiny.",
+  "sly": "Clever in a sneaky way.",
+  "sober": "Serious and sensible.",
+  "soldier": "A trained fighter.",
+  "sow": "To plant seeds.",
+  "special": "Different and important.",
+  "stern": "Strict and serious.",
+  "stomach": "The organ that digests food.",
+  "stoop": "To bend down.",
+  "stout": "Strong or thick.",
+  "stress": "Pressure or worry.",
+  "stubborn": "Unwilling to change.",
+  "sturdy": "Strong and solid.",
+  "subdued": "Quiet and controlled.",
+  "submissive": "Willing to obey.",
+  "submit": "To give in or hand over.",
+  "subterfuge": "A trick to hide the truth.",
+  "subterranean": "Below the ground.",
+  "successful": "Achieving what was aimed for.",
+  "succumb": "To give in to something.",
+  "sufficient": "Enough for a purpose.",
+  "suggest": "To put forward an idea.",
+  "summit": "The top of a mountain.",
+  "superfluous": "More than needed.",
+  "superior": "Better in quality.",
+  "suspect": "To think someone may be guilty.",
+  "suspend": "To hang or stop temporarily.",
+  "symbol": "A sign that stands for something.",
+  "system": "Parts working together.",
+  "temperate": "Mild in climate.",
+  "tempestuous": "Very stormy.",
+  "temptation": "A strong desire to do something wrong.",
+  "thrust": "To push suddenly.",
+  "torment": "Severe pain or suffering.",
+  "traitor": "Someone who betrays others.",
+  "tranquil": "Peaceful and calm.",
+  "trifle": "Something of little value.",
+  "trivial": "Not important.",
+  "tyrant": "A cruel ruler.",
+  "unfathomable": "Impossible to understand.",
+  "uniform": "The same everywhere.",
+  "union": "The joining of parts.",
+  "unite": "To join together.",
+  "unnecessary": "Not needed.",
+  "unorthodox": "Not usual.",
+  "unsurpassed": "Better than all others.",
+  "vacant": "Empty.",
+  "vanish": "To disappear.",
+  "vapour": "Gas from a liquid.",
+  "vast": "Very large.",
+  "vehicle": "A means of transport.",
+  "veil": "A covering cloth.",
+  "venerable": "Deserving respect due to age.",
+  "ventilation": "The movement of fresh air.",
+  "vessel": "A container or ship.",
+  "vicarious": "Experienced through others.",
+  "virtuous": "Having high moral standards.",
+  "volatile": "Likely to change suddenly.",
+  "wasteful": "Using too much.",
+  "weary": "Very tired.",
+  "wholesome": "Good for health.",
+  "wither": "To dry up and die.",
+  "wholly": "Completely.",
+  "worthy": "Deserving respect.",
+  "yield": "To produce or give way."
+};
+
+/* ================= SAFETY CHECK ================= */
+vocabWords.forEach(w => {
+  if (!definitions[w]) console.error("Missing definition:", w);
+});
+
+/* ================= GAME STATE ================= */
+let time, timer, score;
+let usedWords = [];
+let currentWord;
+let wrongAnswers = [];
+
+/* ================= GAME LOGIC ================= */
+function startGame() {
+    score = 0;
+    time = TIME_LIMIT;
+    usedWords = [];
+    wrongAnswers = [];
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("time").textContent = time;
+
+    showScreen("game-screen");
+    updateHighScoreDisplay();
+
+    nextWord();
+    clearInterval(timer);
+    timer = setInterval(tick, 1000);
+}
+
+function tick() {
+    time--;
+    document.getElementById("time").textContent = time;
+    if (time <= 0) endGame();
+}
+
+function nextWord() {
+    do {
+        currentWord = vocabWords[Math.floor(Math.random() * vocabWords.length)];
+    } while (usedWords.includes(currentWord));
+
+    usedWords.push(currentWord);
+    document.getElementById("word").textContent = currentWord;
+    generateDefinitions();
+}
+
+function generateDefinitions() {
+    const correct = definitions[currentWord];
+
+    const distractors = vocabWords
+        .filter(w => w !== currentWord)
+        .map(w => definitions[w])
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
+
+    const options = [correct, ...distractors]
+        .sort(() => Math.random() - 0.5);
+
+    const box = document.getElementById("definitions");
+    box.innerHTML = "";
+
+    options.forEach(def => {
+        const d = document.createElement("div");
+        d.className = "definition";
+        d.textContent = def;
+        d.onclick = () => selectAnswer(d, def === correct);
+        box.appendChild(d);
+    });
+}
+
+function selectAnswer(el, correct) {
+    document.querySelectorAll(".definition").forEach(d => d.onclick = null);
+
+    if (correct) {
+        el.classList.add("correct");
+        score++;
+        document.getElementById("score").textContent = score;
+    } else {
+        el.classList.add("wrong");
+        wrongAnswers.push({ word: currentWord, definition: definitions[currentWord] });
+    }
+
+    setTimeout(nextWord, 400);
+}
+
+function endGame() {
+    clearInterval(timer);
+    document.getElementById("finalScore").textContent = score;
+
+    const list = document.getElementById("wrong-list");
+    list.innerHTML = wrongAnswers.length === 0
+        ? "<p>Excellent — no mistakes!</p>"
+        : wrongAnswers.map(w =>
+            `<p><strong>${w.word}</strong>: ${w.definition}</p>`
+          ).join("");
+
+    updateHighScore();
+    showScreen("end-screen");
+}
+
+/* ================= HIGH SCORE ================= */
+function updateHighScore() {
+    const high = localStorage.getItem("vocabHighScore") || 0;
+    if (score > high) localStorage.setItem("vocabHighScore", score);
+}
+
+function updateHighScoreDisplay() {
+    document.getElementById("highScore").textContent =
+        localStorage.getItem("vocabHighScore") || 0;
+}
+
+/* ================= SCREEN HANDLING ================= */
+function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+</script>
+
+</body>
+</html>
